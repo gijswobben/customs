@@ -21,7 +21,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # -- Project information -----------------------------------------------------
 
 project = "customs"
-copyright = "2020, Gijs Wobben"
+copyright = "2021, Gijs Wobben"
 author = "Gijs Wobben"
 
 
