@@ -18,7 +18,7 @@ DATABASE = {"admin": {"name": "Administrator User", "password": "admin"}}
 
 
 def authentication_function(username: str, password: str) -> Dict:
-    """ Method that authenticates a user with a username and password
+    """Method that authenticates a user with a username and password
 
     Args:
         username (str): The username
@@ -38,7 +38,7 @@ def authentication_function(username: str, password: str) -> Dict:
 
 
 def serialize_user(user: Dict) -> Dict:
-    """ Method to serialize user information so it can be stored in a session.
+    """Method to serialize user information so it can be stored in a session.
 
     Args:
         user (Dict): The user information
@@ -50,7 +50,7 @@ def serialize_user(user: Dict) -> Dict:
 
 
 def deserialize_user(data: Dict) -> Dict:
-    """ Convert a serialized user (e.g. on a session cookie) back to the full
+    """Convert a serialized user (e.g. on a session cookie) back to the full
     user information.
 
     Args:
@@ -63,7 +63,11 @@ def deserialize_user(data: Dict) -> Dict:
 
 
 # Create a strategy
-basic_strategy = BasicStrategy(authentication_function, serialize_user_function=serialize_user, deserialize_user_function=deserialize_user)
+basic_strategy = BasicStrategy(
+    authentication_function,
+    serialize_user_function=serialize_user,
+    deserialize_user_function=deserialize_user,
+)
 
 # Declare the entire app a safe zone, all routes will be protected in the same way
 customs.safe_zone(app, strategies=["basic"])

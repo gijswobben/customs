@@ -1,8 +1,6 @@
 from customs.helpers import parse_args, parse_content, parse_headers, parse_data
 
 from flask import Flask, request
-import pytest
-import json
 
 
 def test_parse_args():
