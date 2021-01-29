@@ -1,4 +1,4 @@
-from pycustoms.exceptions import UnauthorizedException, HTTPException
+from customs.exceptions import UnauthorizedException, HTTPException
 
 
 def test_UnauthorizedException():

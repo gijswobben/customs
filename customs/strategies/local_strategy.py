@@ -1,10 +1,10 @@
-from pycustoms.strategies.basestrategy import BaseStrategy
+from customs.strategies.basestrategy import BaseStrategy
 
 from typing import Any, Optional, Tuple, Union
 
 from flask import Request as FlaskRequest
 from werkzeug.wrappers import Request
-from pycustoms.helpers import parse_content
+from customs.helpers import parse_content
 
 
 class LocalStrategy(BaseStrategy):

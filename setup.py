@@ -3,8 +3,8 @@ from setuptools import find_packages
 
 
 setup(
-    name="pycustoms",
-    version="0.1",
+    name="customs",
+    version="0.1.0",
     author="NewInnovator",
     author_email="",
     description=("Python library for guarding APIs."),

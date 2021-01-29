@@ -1,9 +1,9 @@
 from typing import Dict
 from flask import Flask, Blueprint
 
-from pycustoms import Customs
-from pycustoms.strategies import LocalStrategy, BasicStrategy, JWTStrategy
-from pycustoms.exceptions import UnauthorizedException
+from customs import Customs
+from customs.strategies import LocalStrategy, BasicStrategy, JWTStrategy
+from customs.exceptions import UnauthorizedException
 
 app = Flask(__name__)
 app.secret_key = "541e8467-2321-4df9-8246-25b55dca3466"

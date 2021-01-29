@@ -1,12 +1,13 @@
 import base64
 
-from pycustoms.strategies.basestrategy import BaseStrategy
+from customs.strategies.basestrategy import BaseStrategy
+from customs.exceptions import UnauthorizedException
 
 from typing import Any, Dict, Optional, Tuple, Union
 
 from flask import Request as FlaskRequest
 from werkzeug.wrappers import Request
-from pycustoms.helpers import parse_headers
+from customs.helpers import parse_headers
 
 
 class BasicStrategy(BaseStrategy):
@@ -30,4 +31,6 @@ class BasicStrategy(BaseStrategy):
 
     def authenticate(self, request: Union[Request, FlaskRequest]) -> Any:
         username, password = self.extract_credentials(request)
+        if username is None or password is None:
+            raise UnauthorizedException()
         return self._authentication_function(username, password)

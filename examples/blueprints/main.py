@@ -1,5 +1,5 @@
 from typing import Dict
-from flask import Flask
+from flask import Flask, Blueprint
 from flask.json import jsonify
 
 from customs import Customs
@@ -65,13 +65,14 @@ def deserialize_user(data: Dict) -> Dict:
 # Create a strategy
 basic_strategy = BasicStrategy(authentication_function)
 
-# Declare the entire app a safe zone, all routes will be protected in the same way
-customs.safe_zone(app, strategies=["basic"])
+# Create a blueprint as a safe zone
+api = customs.safe_zone(
+    Blueprint("api", __name__, url_prefix="/api"), strategies=["basic"]
+)
 
-
-# ------------------ #
-# Define some routes #
-# ------------------ #
+# ----------------------- #
+# Define some open routes #
+# ----------------------- #
 
 
 @app.route("/")
@@ -79,10 +80,22 @@ def index():
     return "Success"
 
 
-@app.route("/user_info")
-def test(user: Dict):
+# ---------------------------------- #
+# Define some (protected) API routes #
+# ---------------------------------- #
+
+
+@api.route("/test")
+def test():
+    return "Success"
+
+
+@api.route("/user_info")
+def user_info(user: Dict):
     return jsonify(user)
 
 
 if __name__ == "__main__":
+    # Register the blueprint with the app
+    app.register_blueprint(api)
     app.run()

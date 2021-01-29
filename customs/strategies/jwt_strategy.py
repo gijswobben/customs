@@ -1,23 +1,23 @@
-from pycustoms.strategies.basestrategy import BaseStrategy
+from customs.strategies.basestrategy import BaseStrategy
 
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 from flask import Request as FlaskRequest
 from werkzeug.wrappers import Request
-from pycustoms.helpers import parse_headers
-from pycustoms.exceptions import UnauthorizedException
+from customs.helpers import parse_headers
+from customs.exceptions import UnauthorizedException
 from jose import jwt
 
 
 class JWTStrategy(BaseStrategy):
 
     name: str = "jwt"
-    key: str = "88cbf57a-7d0b-4f1e-a8d2-a7d4db8adb04"
+    key: str = "88cbf57a-7d0b-4f1e-a8d2-a7d4db8adb04"  # TODO: Move to argument
 
     def __init__(self, serialize_user, deserialize_user) -> None:
         authentication_function = lambda x: ...
-        self.serialize_user = serialize_user
-        self.deserialize_user = deserialize_user
+        self._serialize_user_function = serialize_user
+        self._deserialize_user_function = deserialize_user
         super().__init__(authentication_function)
 
     def extract_credentials(self, request: Union[Request, FlaskRequest]) -> Optional[str]:
@@ -40,7 +40,7 @@ class JWTStrategy(BaseStrategy):
         # Decode and validate the token
         try:
             decoded = jwt.decode(token, self.key)
-            self.deserialize_user(decoded)
+            return self.deserialize_user(decoded)
         except Exception as e:
             print(e)
             raise
