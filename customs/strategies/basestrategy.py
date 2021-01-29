@@ -1,4 +1,4 @@
-from abc import ABC, abstractclassmethod
+from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
 from typing import Any, Callable, Dict, Optional, TypeVar, Union
 
 from customs.customs import Customs
@@ -27,12 +27,25 @@ class BaseStrategy(ABC):
         customs = Customs()
         customs.register_strategy(self.name, self)
 
-    @abstractclassmethod
-    def extract_credentials(self, request: Union[Request, FlaskRequest]) -> Dict:
+    @property
+    @abstractmethod
+    def name(self):
         ...
 
-    @abstractclassmethod
+    @name.setter
+    @abstractmethod
+    def name(self, new_name: str):
+        ...
+
+    @classmethod
+    @abstractmethod
+    def extract_credentials(self, request: Union[Request, FlaskRequest]) -> Dict[str, str]:
+        ...
+
+    @classmethod
+    @abstractmethod
     def authenticate(self, request: Union[Request, FlaskRequest]) -> Any:
+        """ Method should return the user info """
         ...
 
     def serialize_user(self, user: User) -> Dict:

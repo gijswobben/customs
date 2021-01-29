@@ -1,6 +1,9 @@
+import random
+import string
+
 from customs.strategies.basestrategy import BaseStrategy
 
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from flask import Request as FlaskRequest
 from werkzeug.wrappers import Request
@@ -12,27 +15,31 @@ from jose import jwt
 class JWTStrategy(BaseStrategy):
 
     name: str = "jwt"
-    key: str = "88cbf57a-7d0b-4f1e-a8d2-a7d4db8adb04"  # TODO: Move to argument
 
-    def __init__(self, serialize_user, deserialize_user) -> None:
-        self._serialize_user_function = serialize_user
-        self._deserialize_user_function = deserialize_user
-        super().__init__()
+    def __init__(self, key: Optional[str] = None, *args, **kwargs) -> None:
+        if key is None:
+            key = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(64))
+        self.key = key
 
-    def extract_credentials(self, request: Union[Request, FlaskRequest]) -> Optional[str]:
-        data = parse_headers(request)
-        authorization_header = data.get("authorization", "")
+        super().__init__(*args, **kwargs)
+
+    def extract_credentials(self, request: Union[Request, FlaskRequest]) -> Dict[str, str]:
+
+        # Parse the headers of the request
+        headers = parse_headers(request)
+        authorization_header = headers.get("authorization", "")
 
         if authorization_header.lower().startswith("bearer "):
             token = authorization_header[len("bearer "):]
-            return token
-        else:
-            return None
+            return {"token": token}
+
+        return {}
 
     def authenticate(self, request: Union[Request, FlaskRequest]) -> Any:
 
         # Get the token
-        token = self.extract_credentials(request)
+        credentials = self.extract_credentials(request)
+        token = credentials.get("token")
         if token is None:
             raise UnauthorizedException("No token found")
 
@@ -40,9 +47,18 @@ class JWTStrategy(BaseStrategy):
         try:
             decoded = jwt.decode(token, self.key)
             return self.deserialize_user(decoded)
+
         except Exception as e:
             print(e)
-            raise
+            raise UnauthorizedException()
 
     def sign(self, user: Any) -> str:
+        """ Sign a new token for the user. Serialize the user info before signing.
+
+        Args:
+            user (Any): The user data to serialize and sign
+
+        Returns:
+            str: The signed token
+        """
         return jwt.encode(self.serialize_user(user), self.key)

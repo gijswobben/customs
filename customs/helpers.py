@@ -6,10 +6,7 @@ from werkzeug.wrappers import Request
 
 
 def parse_args(request: Union[Request, FlaskRequest]) -> Dict:
-    try:
-        return dict(request.args)
-    except Exception:
-        return {}
+    return dict(request.args)
 
 
 def parse_data(request: Union[Request, FlaskRequest]) -> Dict:

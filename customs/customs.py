@@ -5,17 +5,19 @@ import warnings
 
 from datetime import timedelta
 from flask import Flask, Blueprint, request, session
-from customs.exceptions import HTTPException
+from customs.exceptions import UnauthorizedException
 
 from types import MethodType
 from typing import (
     Callable,
     Dict,
+    Iterable,
     List,
     TYPE_CHECKING,
     Any,
     Optional,
     T,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -24,7 +26,6 @@ from typing import (
 if TYPE_CHECKING:
     from customs.strategies.basestrategy import BaseStrategy
     from wsgiref.types import StartResponse
-    from flask.wrappers import Request
 
 
 User = TypeVar("User")
@@ -84,9 +85,11 @@ class Customs(metaclass=_Singleton):
     ) -> None:
 
         # Make sure the user has set a secret
-        assert (
-            app.secret_key is not None
-        ), "App secret is required for using sessions, sessions will be disabled."
+        if app.secret_key is None:
+            warnings.warn(
+                "App secret is required for using sessions, sessions will be disabled."
+            )
+            self.use_sessions = False
 
         # Store the original WSGI app
         self.app = app
@@ -109,17 +112,44 @@ class Customs(metaclass=_Singleton):
         # Register the before_request handler which will check every request using the specified strategies
         self.app.before_request(self._before_request)
 
-    def _xray_request(self):
-        ...
-        # TODO: Implement checks on the request
+    def _check_passport(
+        self, strategies: Iterable[BaseStrategy]
+    ) -> Tuple[User, BaseStrategy]:
+        """Check the identity of the user (check their passport) using the strategies.
 
-    def _check_passport(self) -> User:
-        ...
+        Args:
+            strategies (Iterable[BaseStrategy]): Strategies to use for checking the user
 
-    def _check_authorization(self):
-        ...
+        Raises:
+            UnauthorizedException: Raised when no strategy is able to verify the user
+
+        Returns:
+            Tuple[User, BaseStrategy]: The user information and the strategy that was used for verifying
+        """
+
+        # Loop the strategies
+        exceptions: List[Exception] = []
+        for strategy in strategies:
+
+            # Try to authenticate the user using the strategy
+            try:
+                user = strategy.authenticate(request)
+                return user, strategy
+
+            # Store any unauthorized exceptions
+            except UnauthorizedException as e:
+                exceptions.append(e)
+
+        # No strategy was able to verify the user, raise the exception from the first strategy
+        raise exceptions[0]
 
     def _grant_access(self, user: User):
+        """ Method to grant access to the user information in the view function. Will add the user
+        information as an argument to the view function, if the function accepts the "user" argument.
+
+        Args:
+            user (User): The user data
+        """
 
         # Get the view_function that the user wants access to
         view_function = self.app.view_functions.get(request.url_rule.endpoint)
@@ -140,55 +170,61 @@ class Customs(metaclass=_Singleton):
         ):
             request.view_args["user"] = user
 
+    def _check_session(self) -> Optional[User]:
+        """ Check the session object (when using sessions) to ensure the user has been
+        authenticated before.
+
+        Returns:
+            Optional[User]: The identified user
+        """
+        # Inspect the session, when using sessions
+        if self.use_sessions and "user" in session and "strategy" in session:
+
+            # Get the strategy that was used to identify the user before
+            strategy = self.available_strategies.get(session["strategy"])
+            if strategy is None:
+                return None
+
+            # Deserialize the user data from the session into a full user object
+            user = strategy.deserialize_user(session["user"])
+            return user
+
+        # Not using sessions or no pre-authorized user found
+        else:
+            return None
+
     def _before_request(self):
         """Method that runs before every request. Should check the request using
         the defined strategies that are in use. Will add the found user to the arguments
         of the user defined request handler.
         """
 
-        # 1: X-ray the request to find tokens/sessions/... (raise exceptions when needed)
-        # self._xray_request()
+        # Make sure there are any strategies to check, otherwise just skip
+        if len(self.strategies.values()) != 0:
 
-        # 2: Check the identity/passport of the user (return identity)
-        user = self._check_passport()
+            # 1. Check session info
+            user = self._check_session()
 
-        # 3: Check authorization
-        # self._check_authorization()
+            # No info found from the session
+            if user is None:
 
-        # 4: Handle view function
-        self._grant_access(user=user)
+                # 2: Check the identity/passport of the user (return identity)
+                try:
+                    user, strategy = self._check_passport(
+                        strategies=self.strategies.values()
+                    )
 
-        # # Don't do anything if no strategies are in use
-        # if len(self.strategies.values()) != 0:
+                    # When using sessions, add the serialized user to the session
+                    if self.use_sessions:
+                        serialized_user = strategy.serialize_user(user)
+                        session["user"] = serialized_user
+                        session["strategy"] = strategy.name
 
-        #     if not self.is_authenticated():
+                except UnauthorizedException as e:
+                    return e.message, e.status_code
 
-        #         # Get the function that will handle the request (user defined)
-        #         request_handler = self.app.view_functions.get(request.url_rule.endpoint)
-        #         try:
-
-        #             # Verify the request and extract the user
-        #             user = self._verify_request(request, self.strategies.values())
-
-        #             # Add the user as argument to the handler function (but only if it accepts it)
-        #             request_handler_has_kwargs = any(
-        #                 [
-        #                     parameter.kind == inspect.Parameter.VAR_KEYWORD
-        #                     for parameter in list(
-        #                         dict(
-        #                             inspect.signature(request_handler).parameters
-        #                         ).values()
-        #                     )
-        #                 ]
-        #             )
-        #             if (
-        #                 "user" in inspect.signature(request_handler).parameters
-        #                 or request_handler_has_kwargs
-        #             ):
-        #                 request.view_args["user"] = user
-
-        #         except HTTPException as e:
-        #             return e.message, e.status_code
+            # 3: Handle view function
+            self._grant_access(user=user)
 
     def register_strategy(self, name: str, strategy: BaseStrategy) -> Customs:
         """Register a strategy without using it for every route. Makes the strategy
@@ -205,28 +241,28 @@ class Customs(metaclass=_Singleton):
         self.available_strategies[name] = strategy
         return self
 
-    def is_authenticated(self) -> bool:
-        return session.get("is_authenticated", False)
+    # def is_authenticated(self) -> bool:
+    #     return session.get("is_authenticated", False)
 
-    def ensure_authenticated(self, func: Callable) -> Callable:
-        """Decorator method that wraps a view function so it can only be accessed by
-        authenticated users.
+    # def ensure_authenticated(self, func: Callable) -> Callable:
+    #     """Decorator method that wraps a view function so it can only be accessed by
+    #     authenticated users.
 
-        Args:
-            func (Callable): The function to decorate
+    #     Args:
+    #         func (Callable): The function to decorate
 
-        Returns:
-            Callable: The decorated function
-        """
+    #     Returns:
+    #         Callable: The decorated function
+    #     """
 
-        def wrapper(*args, **kwargs):
-            if self.is_authenticated():
-                return func(*args, **kwargs)
-            else:
-                return "Unauthorized", 401
+    #     def wrapper(*args, **kwargs):
+    #         if self.is_authenticated():
+    #             return func(*args, **kwargs)
+    #         else:
+    #             return "Unauthorized", 401
 
-        wrapper.__name__ = func.__name__
-        return wrapper
+    #     wrapper.__name__ = func.__name__
+    #     return wrapper
 
     def protect(self, strategies: Union[List[str], str]) -> Callable:
         """Decorator method that protects a specific route, using a set of strategies.
@@ -263,79 +299,39 @@ class Customs(metaclass=_Singleton):
         def func_wrapper(func: Callable) -> Callable:
             def wrapper(*args, **kwargs):
 
-                if not self.is_authenticated():
+                # 1. Check session info
+                user = self._check_session()
 
-                    # Mark session as permanent to enforce the timeout
-                    session.permanent = True
+                # No info found from the session
+                if user is None:
 
-                    exceptions = []
-                    for strategy in strategy_objects:
-                        try:
+                    # 2: Check the identity/passport of the user (return identity)
+                    try:
+                        user, strategy = self._check_passport(
+                            strategies=strategy_objects
+                        )
 
-                            # Use the strategy to authenticate the request and retrieve the user
-                            user = strategy.authenticate(request)
+                        # When using sessions, add the serialized user to the session
+                        if self.use_sessions:
+                            serialized_user = strategy.serialize_user(user)
+                            session["user"] = serialized_user
+                            session["strategy"] = strategy.name
 
-                            # Store the user on the session cookie
-                            if self.use_sessions:
-                                session["user"] = user
-                                session["is_authenticated"] = True
+                    except UnauthorizedException as e:
+                        return e.message, e.status_code
 
-                            # Add the user as argument to the handler function
-                            if "user" in inspect.signature(func).parameters:
-                                kwargs["user"] = user
+                # 3: Handle view function
+                # Add the user as argument to the handler function
+                if "user" in inspect.signature(func).parameters:
+                    kwargs["user"] = user
 
-                            return func(*args, **kwargs)
-
-                        # Catch all exceptions
-                        except Exception as e:
-                            exceptions.append(e)
-
-                    # Return the first exception if no strategy was successful
-                    return exceptions[0].message, exceptions[0].status_code
-
-                else:
-                    # TODO: Deserialize user
-                    return func(*args, **kwargs)
+                return func(*args, **kwargs)
 
             # Update the wrapper name before returning
             wrapper.__name__ = func.__name__
             return wrapper
 
         return func_wrapper
-
-    def _verify_request(
-        self, current_request: Request, strategies: List[BaseStrategy]
-    ) -> Any:
-
-        # TODO: Deserialize user if the request was already authenticated
-
-        # Keep track of exceptions that are thrown by the different strategies
-        exceptions: List[Exception] = []
-
-        # Loop the set of strategies
-        for strategy in strategies:
-
-            # Authenticate using the strategies "authenticate" method
-            try:
-                user = strategy.authenticate(current_request)
-
-                # Try to convert the user data when the type isn't correct
-                if not isinstance(user, self.user_class):
-                    user = self.user_class(user)
-
-                # Store the user on the session cookie
-                if self.use_sessions:
-                    session["user"] = user
-                    session["is_authenticated"] = True
-
-                # Return the user
-                return user
-
-            except HTTPException as e:
-                exceptions.append(e)
-
-        # Raise the exception from the first strategy if none of them worked
-        raise exceptions[0]
 
     def safe_zone(self, zone: Union[Blueprint, Flask], strategies: List[str]):
         """Create a zone/section of the app that is protected with specific strategies. The

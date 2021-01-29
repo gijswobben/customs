@@ -1,6 +1,6 @@
 from customs.strategies.basestrategy import BaseStrategy
 
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from flask import Request as FlaskRequest
 from werkzeug.wrappers import Request
@@ -11,7 +11,7 @@ class LocalStrategy(BaseStrategy):
 
     name: str = "local"
 
-    def extract_credentials(self, request: Union[Request, FlaskRequest]) -> Tuple[Optional[str], Optional[str]]:
+    def extract_credentials(self, request: Union[Request, FlaskRequest]) -> Dict[str, str]:
         data = parse_content(request)
         return data.get("username"), data.get("password")
 
