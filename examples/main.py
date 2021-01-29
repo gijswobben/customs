@@ -10,12 +10,7 @@ app.secret_key = "541e8467-2321-4df9-8246-25b55dca3466"
 
 customs = Customs(app)
 
-DATABASE = {
-    "test": {
-        "name": "Test User",
-        "password": "test"
-    }
-}
+DATABASE = {"test": {"name": "Test User", "password": "test"}}
 
 
 def authentication_function(username: str, password: str):
@@ -36,13 +31,18 @@ def deserialize_user(data):
 # Create some strategies
 local_strategy = LocalStrategy(authentication_function)
 basic_strategy = BasicStrategy(authentication_function)
-jwt_strategy = JWTStrategy(serialize_user=serialize_user, deserialize_user=deserialize_user)
+jwt_strategy = JWTStrategy(
+    serialize_user=serialize_user, deserialize_user=deserialize_user
+)
 
 # # Enable on all routes in the app
 # customs.use("local", local_strategy)
 # customs.use("basic", basic_strategy)
 
-api = customs.safe_zone(Blueprint("api", __name__, url_prefix="/api"), strategies=["jwt"])
+api = customs.safe_zone(
+    Blueprint("api", __name__, url_prefix="/api"), strategies=["jwt"]
+)
+
 
 @app.route("/login", methods=["POST"])
 @customs.protect(strategies=["local", "basic"])
@@ -67,6 +67,7 @@ def test(test, *args, **kwargs):
 @api.route("/test")
 def root():
     return "Success"
+
 
 @api.route("/test2")
 def root2():

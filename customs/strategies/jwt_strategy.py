@@ -15,10 +15,9 @@ class JWTStrategy(BaseStrategy):
     key: str = "88cbf57a-7d0b-4f1e-a8d2-a7d4db8adb04"  # TODO: Move to argument
 
     def __init__(self, serialize_user, deserialize_user) -> None:
-        authentication_function = lambda x: ...
         self._serialize_user_function = serialize_user
         self._deserialize_user_function = deserialize_user
-        super().__init__(authentication_function)
+        super().__init__()
 
     def extract_credentials(self, request: Union[Request, FlaskRequest]) -> Optional[str]:
         data = parse_headers(request)
