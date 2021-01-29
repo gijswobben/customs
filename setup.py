@@ -13,7 +13,7 @@ else:
 
 setuptools.setup(
     name="customs",
-    version="0.1.0",
+    version=version,
     author="NewInnovator",
     author_email="",
     license="MIT",
