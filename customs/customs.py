@@ -89,7 +89,7 @@ class Customs(metaclass=_Singleton):
     ) -> None:
 
         # Make sure the user has set a secret
-        if app.secret_key is None:
+        if app.secret_key is None and use_sessions:
             warnings.warn(
                 "App secret is required for using sessions, sessions will be disabled."
             )
