@@ -8,7 +8,7 @@ from flask import Flask, Blueprint, request, session
 from customs.exceptions import UnauthorizedException
 
 from types import MethodType
-from typing import (
+from typing import (  # type: ignore
     Callable,
     Dict,
     Iterable,
@@ -42,7 +42,7 @@ class _Singleton(type):
         T: Instance of class T
     """
 
-    _instances = {}
+    _instances: Dict[Type, T] = {}
 
     def __call__(cls: Type[T], *args, **kwargs) -> T:
         if cls not in cls._instances:
@@ -96,7 +96,7 @@ class Customs(metaclass=_Singleton):
         self.wsgi_app = app.wsgi_app
 
         # Replace the app's WSGI app with this middleware
-        app.wsgi_app = self
+        app.wsgi_app = self  # type: ignore
 
         # Store input arguments
         self.use_sessions = use_sessions
@@ -152,6 +152,7 @@ class Customs(metaclass=_Singleton):
         """
 
         # Get the view_function that the user wants access to
+        assert request.url_rule is not None, "Unable to match view function, no url_rule attribute for the request"
         view_function = self.app.view_functions.get(request.url_rule.endpoint)
         assert view_function is not None, "View function not found"
 
@@ -186,7 +187,7 @@ class Customs(metaclass=_Singleton):
                 return None
 
             # Deserialize the user data from the session into a full user object
-            user = strategy.deserialize_user(session["user"])
+            user: User = strategy.deserialize_user(session["user"])
             return user
 
         # Not using sessions or no pre-authorized user found
@@ -367,7 +368,7 @@ class Customs(metaclass=_Singleton):
                 )
 
             # Patch the blueprint with a new add_url_rule method, which will wrap the route with protection
-            zone.add_url_rule = MethodType(_add_url_rule, zone)
+            zone.add_url_rule = MethodType(_add_url_rule, zone)  # type: ignore
             return zone
 
         # Protect an entire app

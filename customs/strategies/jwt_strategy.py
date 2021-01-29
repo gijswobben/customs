@@ -9,7 +9,7 @@ from flask import Request as FlaskRequest
 from werkzeug.wrappers import Request
 from customs.helpers import parse_headers
 from customs.exceptions import UnauthorizedException
-from jose import jwt
+from jose import jwt  # type: ignore
 
 
 class JWTStrategy(BaseStrategy):

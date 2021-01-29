@@ -10,8 +10,6 @@ class HTTPException(Exception):
         self,
         message: Optional[str] = None,
         status_code: Optional[int] = None,
-        *args,
-        **kwargs
     ) -> None:
 
         # Store the error message
@@ -24,7 +22,7 @@ class HTTPException(Exception):
             self.status_code = self._default_status_code
         else:
             self.status_code = status_code
-        super().__init__(message, *args, **kwargs)
+        super().__init__(message)
 
 
 class UnauthorizedException(HTTPException):

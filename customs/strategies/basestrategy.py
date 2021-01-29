@@ -1,3 +1,5 @@
+import warnings
+
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, Optional, TypeVar, Union
 
@@ -5,15 +7,13 @@ from customs.customs import Customs
 from flask import Request as FlaskRequest
 from werkzeug.wrappers import Request
 
-User = TypeVar("User")
-
 
 class BaseStrategy(ABC):
     def __init__(
         self,
         authentication_function: Callable[[str, str], Dict],
-        serialize_user_function: Optional[Callable] = None,
-        deserialize_user_function: Optional[Callable] = None,
+        serialize_user_function: Optional[Callable[[Any], Dict]] = None,
+        deserialize_user_function: Optional[Callable[[Dict], Any]] = None,
     ) -> None:
 
         # Store the authentication function (user provided)
@@ -24,37 +24,40 @@ class BaseStrategy(ABC):
         self._deserialize_user_function = deserialize_user_function
 
         # Register this strategy as an available strategy for Customs
-        customs = Customs()
-        customs.register_strategy(self.name, self)
+        customs: Optional[Customs] = Customs.get_instance()
+        if customs is not None:
+            customs.register_strategy(self.name, self)
+        else:
+            warnings.warn("Unable to register strategy, make sure to initialize Customs first!")
 
-    @property
+    @property  # type: ignore
     @abstractmethod
-    def name(self):
+    def name(self) -> str:
         ...
 
-    @name.setter
+    @name.setter  # type: ignore
     @abstractmethod
     def name(self, new_name: str):
         ...
 
-    @classmethod
     @abstractmethod
     def extract_credentials(self, request: Union[Request, FlaskRequest]) -> Dict[str, str]:
         ...
 
-    @classmethod
     @abstractmethod
     def authenticate(self, request: Union[Request, FlaskRequest]) -> Any:
         """ Method should return the user info """
         ...
 
-    def serialize_user(self, user: User) -> Dict:
+    def serialize_user(self, user: Any) -> Dict:
         if self._serialize_user_function is not None:
             return self._serialize_user_function(user)
         else:
+            if not isinstance(user, dict):
+                return user.__dict__
             return user
 
-    def deserialize_user(self, data: Dict) -> User:
+    def deserialize_user(self, data: Dict) -> Any:
         if self._deserialize_user_function is not None:
             return self._deserialize_user_function(data)
         else:
