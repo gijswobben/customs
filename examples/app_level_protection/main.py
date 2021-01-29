@@ -63,7 +63,7 @@ def deserialize_user(data: Dict) -> Dict:
 
 
 # Create a strategy
-basic_strategy = BasicStrategy(authentication_function)
+basic_strategy = BasicStrategy(authentication_function, serialize_user_function=serialize_user, deserialize_user_function=deserialize_user)
 
 # Declare the entire app a safe zone, all routes will be protected in the same way
 customs.safe_zone(app, strategies=["basic"])
@@ -80,7 +80,8 @@ def index():
 
 
 @app.route("/user_info")
-def test(user: Dict):
+def user_info(user: Dict):
+    user.pop("password")
     return jsonify(user)
 
 

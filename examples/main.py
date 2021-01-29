@@ -31,9 +31,7 @@ def deserialize_user(data):
 # Create some strategies
 local_strategy = LocalStrategy(authentication_function)
 basic_strategy = BasicStrategy(authentication_function)
-jwt_strategy = JWTStrategy(
-    serialize_user=serialize_user, deserialize_user=deserialize_user
-)
+jwt_strategy = JWTStrategy(authentication_function=authentication_function)
 
 # # Enable on all routes in the app
 # customs.use("local", local_strategy)

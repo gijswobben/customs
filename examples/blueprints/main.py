@@ -66,8 +66,8 @@ def deserialize_user(data: Dict) -> Dict:
 basic_strategy = BasicStrategy(authentication_function)
 
 # Create a blueprint as a safe zone
-api = customs.safe_zone(
-    Blueprint("api", __name__, url_prefix="/api"), strategies=["basic"]
+secure = customs.safe_zone(
+    Blueprint("secure", __name__, url_prefix="/secure"), strategies=["basic"]
 )
 
 # ----------------------- #
@@ -80,22 +80,23 @@ def index():
     return "Success"
 
 
-# ---------------------------------- #
-# Define some (protected) API routes #
-# ---------------------------------- #
+# ------------------------------ #
+# Define some (protected) routes #
+# ------------------------------ #
 
 
-@api.route("/test")
+@secure.route("/test")
 def test():
     return "Success"
 
 
-@api.route("/user_info")
+@secure.route("/user_info")
 def user_info(user: Dict):
+    user.pop("password")
     return jsonify(user)
 
 
 if __name__ == "__main__":
     # Register the blueprint with the app
-    app.register_blueprint(api)
+    app.register_blueprint(secure)
     app.run()
