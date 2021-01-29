@@ -49,6 +49,10 @@ class _Singleton(type):
             cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
+    def remove_instance(cls: Type[T]):
+        if cls in cls._instances:
+            del cls._instances[cls]
+
     def get_instance(cls: Type[T]) -> Optional[T]:
         """Get an existing instance of class T, if it exists. Returns None if no
         instance exists.

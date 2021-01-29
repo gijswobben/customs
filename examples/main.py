@@ -49,10 +49,10 @@ def login(user: Dict):
     return jwt_strategy.sign(user)
 
 
-@app.route("/")
-@customs.ensure_authenticated
-def index():
-    return "Success"
+# @app.route("/")
+# @customs.ensure_authenticated
+# def index():
+#     return "Success"
 
 
 @app.route("/test/<test>")

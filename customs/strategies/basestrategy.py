@@ -1,7 +1,7 @@
 import warnings
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 from customs.customs import Customs
 from flask import Request as FlaskRequest
@@ -33,21 +33,21 @@ class BaseStrategy(ABC):
     @property  # type: ignore
     @abstractmethod
     def name(self) -> str:
-        ...
+        ...  # pragma: no cover
 
     @name.setter  # type: ignore
     @abstractmethod
     def name(self, new_name: str):
-        ...
+        ...  # pragma: no cover
 
     @abstractmethod
     def extract_credentials(self, request: Union[Request, FlaskRequest]) -> Dict[str, str]:
-        ...
+        ...  # pragma: no cover
 
     @abstractmethod
     def authenticate(self, request: Union[Request, FlaskRequest]) -> Any:
         """ Method should return the user info """
-        ...
+        ...  # pragma: no cover
 
     def serialize_user(self, user: Any) -> Dict:
         if self._serialize_user_function is not None:

@@ -3,7 +3,7 @@ import string
 
 from customs.strategies.basestrategy import BaseStrategy
 
-from typing import Any, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 from flask import Request as FlaskRequest
 from werkzeug.wrappers import Request
@@ -16,12 +16,12 @@ class JWTStrategy(BaseStrategy):
 
     name: str = "jwt"
 
-    def __init__(self, key: Optional[str] = None, *args, **kwargs) -> None:
+    def __init__(self, authentication_function: Callable, key: Optional[str] = None, *args, **kwargs) -> None:
         if key is None:
             key = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(64))
         self.key = key
 
-        super().__init__(*args, **kwargs)
+        super().__init__(authentication_function, *args, **kwargs)
 
     def extract_credentials(self, request: Union[Request, FlaskRequest]) -> Dict[str, str]:
 

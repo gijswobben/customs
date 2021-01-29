@@ -29,8 +29,10 @@ class BasicStrategy(BaseStrategy):
                 return {"username": username, "password": password}
             except Exception as e:
                 print(e)
+                raise UnauthorizedException()
 
-        return {}
+        else:
+            raise UnauthorizedException()
 
     def authenticate(self, request: Union[Request, FlaskRequest]) -> Any:
 
@@ -41,5 +43,5 @@ class BasicStrategy(BaseStrategy):
 
         # Test authentication
         if username is None or password is None:
-            raise UnauthorizedException()
+            raise UnauthorizedException()  # pragma: no cover
         return self._authentication_function(username, password)
