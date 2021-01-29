@@ -254,7 +254,8 @@ class Customs(metaclass=_Singleton):
             strategy = self.available_strategies.get(strategy_name)
             if strategy is None:
                 warnings.warn(
-                    f"No strategy named '{strategy}' registered in Customs. Available strategies are: {', '.join(self.available_strategies.keys())}"
+                    f"No strategy named '{strategy}' registered in Customs."
+                    f"Available strategies are: {', '.join(self.available_strategies.keys())}"
                 )
             else:
                 strategy_objects.append(strategy)

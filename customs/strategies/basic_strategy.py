@@ -3,7 +3,7 @@ import base64
 from customs.strategies.basestrategy import BaseStrategy
 from customs.exceptions import UnauthorizedException
 
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 from flask import Request as FlaskRequest
 from werkzeug.wrappers import Request
