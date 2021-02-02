@@ -23,7 +23,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     long_description_content_type="text/markdown",
     long_description=long_description,
-    install_requires=["flask", "python-jose[cryptography]"],
+    install_requires=["flask", "python-jose[cryptography]", "requests"],
     tests_require=["pytest", "pytest-cov"],
     python_requires=">=3.8",
     classifiers=[
