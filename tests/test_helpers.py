@@ -1,6 +1,12 @@
-from customs.helpers import parse_args, parse_content, parse_headers, parse_data
+from customs.helpers import (
+    parse_args,
+    parse_content,
+    parse_headers,
+    parse_data,
+    set_redirect_url,
+)
 
-from flask import Flask, request
+from flask import Flask, request, session
 
 
 def test_parse_args():
@@ -47,3 +53,14 @@ def test_parse_data():
     with app.test_request_context("/", data="some-data-string"):
         data = parse_data(request)
         assert data == {}
+
+
+def test_set_redirect_url():
+
+    # Create a test app
+    app = Flask(__name__)
+    app.secret_key = "bcdec7a5-f9fc-48db-8a11-1fefe7a7c809"
+
+    with app.test_request_context("/?next=test"):
+        set_redirect_url()
+        assert session["next"] == "test"
