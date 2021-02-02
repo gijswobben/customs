@@ -16,14 +16,11 @@ class BasicStrategy(BaseStrategy, ABC):
     name: str = "basic"
 
     def __init__(self) -> None:
-        super().__init__(
-            serialize_user_function=None,
-            deserialize_user_function=None,
-        )
+        super().__init__()
 
     @abstractmethod
     def validate_credentials(self, username: str, password: str) -> Dict:
-        ...
+        ...  # pragma: no cover
 
     def extract_credentials(
         self, request: Union[Request, FlaskRequest]

@@ -50,10 +50,7 @@ class GoogleStrategy(BaseStrategy, ABC):
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
         # Initialize the rest of the strategy
-        super().__init__(
-            serialize_user_function=None,
-            deserialize_user_function=None,
-        )
+        super().__init__()
 
         # Ensure sessions are enabled
         if self._customs is not None:
@@ -75,7 +72,7 @@ class GoogleStrategy(BaseStrategy, ABC):
         return self.token
 
     def get_google_user_info(self) -> Dict:
-        """ Method to get user info for the logged in user, from Google.
+        """Method to get user info for the logged in user, from Google.
 
         Raises:
             UnauthorizedException: When the user is not authenticated
@@ -112,7 +109,7 @@ class GoogleStrategy(BaseStrategy, ABC):
             raise UnauthorizedException()
 
     def validate_token(self) -> Dict:
-        """ Method to validate a Google token with Google.
+        """Method to validate a Google token with Google.
 
         Raises:
             UnauthorizedException: When the user isn't authenticated or token is not valid
@@ -134,7 +131,7 @@ class GoogleStrategy(BaseStrategy, ABC):
             raise UnauthorizedException()
 
     def authenticate(self, request: Union[Request, FlaskRequest]) -> Any:
-        """ Method to authenticate a user
+        """Method to authenticate a user
 
         Args:
             request (Union[Request, FlaskRequest]): [description]
@@ -154,7 +151,7 @@ class GoogleStrategy(BaseStrategy, ABC):
             raise UnauthorizedException()
 
     def register_additional_routes(self, app: Flask) -> None:
-        """ Register additional routes, specific for this strategy.
+        """Register additional routes, specific for this strategy.
 
         Args:
             app (Flask): The app to register the strategies to

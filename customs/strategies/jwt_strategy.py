@@ -18,12 +18,17 @@ class JWTStrategy(BaseStrategy):
 
     def __init__(self, key: Optional[str] = None) -> None:
         if key is None:
-            key = "".join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(64))
+            key = "".join(
+                random.SystemRandom().choice(string.ascii_uppercase + string.digits)
+                for _ in range(64)
+            )
         self.key = key
 
         super().__init__()
 
-    def extract_credentials(self, request: Union[Request, FlaskRequest]) -> Dict[str, str]:
+    def extract_credentials(
+        self, request: Union[Request, FlaskRequest]
+    ) -> Dict[str, str]:
 
         # Parse the headers of the request
         headers = parse_headers(request)
@@ -53,7 +58,7 @@ class JWTStrategy(BaseStrategy):
             raise UnauthorizedException()
 
     def sign(self, user: Any) -> str:
-        """ Sign a new token for the user. Serialize the user info before signing.
+        """Sign a new token for the user. Serialize the user info before signing.
 
         Args:
             user (Any): The user data to serialize and sign
