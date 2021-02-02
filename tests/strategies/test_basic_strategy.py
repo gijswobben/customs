@@ -10,18 +10,26 @@ from customs.strategies import BasicStrategy
 
 
 def test_basic_strategy_initialization_without_customs():
-    def authentication_function(username: str, password: str) -> Dict:
-        return {}
+    class Basic(BasicStrategy):
+        def get_or_create_user(self, user: Dict) -> Dict:
+            return super().get_or_create_user(user)
+
+        def validate_credentials(self, username: str, password: str) -> Dict:
+            return super().validate_credentials(username, password)
 
     with pytest.warns(UserWarning):
-        strategy = BasicStrategy(authentication_function)
+        strategy = Basic()
 
     assert strategy.name == "basic"
 
 
 def test_basic_strategy_initialization_with_customs():
-    def authentication_function(username: str, password: str) -> Dict:
-        return {}
+    class Basic(BasicStrategy):
+        def get_or_create_user(self, user: Dict) -> Dict:
+            return super().get_or_create_user(user)
+
+        def validate_credentials(self, username: str, password: str) -> Dict:
+            return super().validate_credentials(username, password)
 
     # Create customs
     app = Flask("TESTS")
@@ -29,7 +37,7 @@ def test_basic_strategy_initialization_with_customs():
     Customs(app)
 
     # Create the strategy
-    strategy = BasicStrategy(authentication_function)
+    strategy = Basic()
 
     assert strategy.name == "basic"
 
@@ -38,8 +46,12 @@ def test_basic_strategy_initialization_with_customs():
 
 
 def test_basic_strategy_extract_crendentials():
-    def authentication_function(username: str, password: str) -> Dict:
-        return {}
+    class Basic(BasicStrategy):
+        def get_or_create_user(self, user: Dict) -> Dict:
+            return super().get_or_create_user(user)
+
+        def validate_credentials(self, username: str, password: str) -> Dict:
+            return super().validate_credentials(username, password)
 
     # Create customs
     app = Flask("TESTS")
@@ -47,7 +59,7 @@ def test_basic_strategy_extract_crendentials():
     Customs(app)
 
     # Create the strategy
-    strategy = BasicStrategy(authentication_function)
+    strategy = Basic()
 
     with pytest.raises(UnauthorizedException):
         with app.test_request_context("/?test=123", json={"bla": "bla"}):
@@ -73,11 +85,12 @@ def test_basic_strategy_extract_crendentials():
 
 
 def test_basic_strategy_authenticate():
-    def authentication_function(username: str, password: str) -> Dict:
-        if username == "test" and password == "test":
+    class Basic(BasicStrategy):
+        def get_or_create_user(self, user: Dict) -> Dict:
             return {}
-        else:
-            raise UnauthorizedException()
+
+        def validate_credentials(self, username: str, password: str) -> Dict:
+            return {}
 
     # Create customs
     app = Flask("TESTS")
@@ -85,7 +98,7 @@ def test_basic_strategy_authenticate():
     Customs(app)
 
     # Create the strategy
-    strategy = BasicStrategy(authentication_function)
+    strategy = Basic()
 
     with app.test_request_context("/?test=123", json={"bla": "bla"}):
 

@@ -9,19 +9,27 @@ from customs.strategies import LocalStrategy
 
 
 def test_local_strategy_initialization_without_customs():
-    def authentication_function(username: str, password: str) -> Dict:
-        return {}
+    class Local(LocalStrategy):
+        def get_or_create_user(self, user: Dict) -> Dict:
+            return super().get_or_create_user(user)
+
+        def validate_credentials(self, username: str, password: str) -> Dict:
+            return super().validate_credentials(username, password)
 
     with pytest.warns(UserWarning):
         print(Customs.get_instance())
-        strategy = LocalStrategy(authentication_function)
+        strategy = Local()
 
     assert strategy.name == "local"
 
 
 def test_local_strategy_initialization_with_customs():
-    def authentication_function(username: str, password: str) -> Dict:
-        return {}
+    class Local(LocalStrategy):
+        def get_or_create_user(self, user: Dict) -> Dict:
+            return super().get_or_create_user(user)
+
+        def validate_credentials(self, username: str, password: str) -> Dict:
+            return super().validate_credentials(username, password)
 
     # Create customs
     app = Flask("TESTS")
@@ -29,7 +37,7 @@ def test_local_strategy_initialization_with_customs():
     Customs(app)
 
     # Create the strategy
-    strategy = LocalStrategy(authentication_function)
+    strategy = Local()
 
     assert strategy.name == "local"
 
@@ -38,8 +46,12 @@ def test_local_strategy_initialization_with_customs():
 
 
 def test_local_strategy_extract_crendentials():
-    def authentication_function(username: str, password: str) -> Dict:
-        return {}
+    class Local(LocalStrategy):
+        def get_or_create_user(self, user: Dict) -> Dict:
+            return super().get_or_create_user(user)
+
+        def validate_credentials(self, username: str, password: str) -> Dict:
+            return super().validate_credentials(username, password)
 
     # Create customs
     app = Flask("TESTS")
@@ -47,7 +59,7 @@ def test_local_strategy_extract_crendentials():
     Customs(app)
 
     # Create the strategy
-    strategy = LocalStrategy(authentication_function)
+    strategy = Local()
 
     with app.test_request_context("/?test=123", json={"bla": "bla"}):
         credentials = strategy.extract_credentials(request)
@@ -63,11 +75,12 @@ def test_local_strategy_extract_crendentials():
 
 
 def test_local_strategy_authenticate():
-    def authentication_function(username: str, password: str) -> Dict:
-        if username == "test" and password == "test":
+    class Local(LocalStrategy):
+        def get_or_create_user(self, user: Dict) -> Dict:
+            return super().get_or_create_user(user)
+
+        def validate_credentials(self, username: str, password: str) -> Dict:
             return {}
-        else:
-            raise UnauthorizedException()
 
     # Create customs
     app = Flask("TESTS")
@@ -75,7 +88,7 @@ def test_local_strategy_authenticate():
     Customs(app)
 
     # Create the strategy
-    strategy = LocalStrategy(authentication_function)
+    strategy = Local()
 
     with app.test_request_context("/?test=123", json={"bla": "bla"}):
 

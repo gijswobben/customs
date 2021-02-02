@@ -13,63 +13,40 @@ app = Flask(__name__)
 customs = Customs(app, use_sessions=False)
 
 # Mock database
-DATABASE = {"admin": {"name": "Administrator User", "password": "admin"}}
+DATABASE: Dict[str, Dict] = {
+    "admin": {"name": "Administrator User", "password": "admin"}
+}
 
 
-def authentication_function(username: str, password: str) -> Dict:
-    """Method that authenticates a user with a username and password
+class BasicAuthentication(BasicStrategy):
+    def get_or_create_user(self, user: Dict) -> Dict:
+        if user.get("username") in DATABASE:
+            return DATABASE[user["username"]]
+        else:
+            raise UnauthorizedException()
 
-    Args:
-        username (str): The username
-        password (str): The password
-
-    Raises:
-        UnauthorizedException: Thrown when the user could not be authenticated
-
-    Returns:
-        Dict: The user information
-    """
-    # Look up the user and test the password
-    if username in DATABASE and DATABASE[username].get("password", None) == password:
-        return {"username": username, **DATABASE[username]}
-    else:
-        raise UnauthorizedException()
+    def validate_credentials(self, username: str, password: str) -> Dict:
+        if username in DATABASE and DATABASE[username].get("password") == password:
+            return DATABASE[username]
+        else:
+            raise UnauthorizedException()
 
 
-def serialize_user(user: Dict) -> Dict:
-    """Method to serialize user information so it can be stored in a session.
-
-    Args:
-        user (Dict): The user information
-
-    Returns:
-        Dict: The serialized user information
-    """
-    return {"username": user.get("username")}
-
-
-def deserialize_user(data: Dict) -> Dict:
-    """Convert a serialized user (e.g. on a session cookie) back to the full
-    user information.
-
-    Args:
-        data (Dict): The serialized user
-
-    Returns:
-        Dict: The full user information
-    """
-    return {"username": data.get("username"), **DATABASE[data.get("username")]}
+class JWTAuthentication(JWTStrategy):
+    def get_or_create_user(self, user: Dict) -> Dict:
+        if user.get("username") in DATABASE:
+            return DATABASE[user["username"]]
+        else:
+            raise UnauthorizedException()
 
 
 # Create a strategies
-basic_strategy = BasicStrategy(authentication_function)
-jwt_strategy = JWTStrategy(
-    authentication_function, key="9E30771F-6957-4C49-A8A0-55C292025349"
-)
+basic_strategy = BasicAuthentication()
+jwt_strategy = JWTAuthentication(key="9E30771F-6957-4C49-A8A0-55C292025349")
 
 # Create a blueprint as a safe zone, protected using the JWT token strategy
 api = customs.safe_zone(
-    Blueprint("api", __name__, url_prefix="/api"), strategies=["jwt"]
+    Blueprint("api", __name__, url_prefix="/api"), strategies=[jwt_strategy]
 )
 
 # ----------------------- #
@@ -85,7 +62,7 @@ def index():
 
 # Use basic authentication to authenticate the user, create a token for subsequent calls
 @app.route("/login", methods=["POST"])
-@customs.protect(strategies=["basic"])
+@customs.protect(strategies=[basic_strategy])
 def login(user: Dict):
     token = jwt_strategy.sign(user)
     return jsonify({"token": token})

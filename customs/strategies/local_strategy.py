@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from customs.exceptions import UnauthorizedException
 from customs.strategies.basestrategy import BaseStrategy
 
@@ -8,11 +9,25 @@ from werkzeug.wrappers import Request
 from customs.helpers import parse_content
 
 
-class LocalStrategy(BaseStrategy):
+class LocalStrategy(BaseStrategy, ABC):
 
     name: str = "local"
 
-    def extract_credentials(self, request: Union[Request, FlaskRequest]) -> Dict[str, str]:
+    def __init__(
+        self
+    ) -> None:
+        super().__init__(
+            serialize_user_function=None,
+            deserialize_user_function=None,
+        )
+
+    @abstractmethod
+    def validate_credentials(self, username: str, password: str) -> Dict:
+        ...
+
+    def extract_credentials(
+        self, request: Union[Request, FlaskRequest]
+    ) -> Dict[str, str]:
         data = parse_content(request)
         try:
             return {"username": data["username"], "password": data["password"]}
@@ -27,4 +42,4 @@ class LocalStrategy(BaseStrategy):
 
         if username is None or password is None:
             raise UnauthorizedException()
-        return self._authentication_function(username, password)
+        return self.validate_credentials(username, password)

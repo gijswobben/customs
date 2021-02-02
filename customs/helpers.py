@@ -1,6 +1,7 @@
 import json
 
 from typing import Dict, Union
+from flask import request, session
 from flask.wrappers import Request as FlaskRequest
 from werkzeug.wrappers import Request
 
@@ -22,3 +23,10 @@ def parse_content(request: Union[Request, FlaskRequest]) -> Dict:
 
 def parse_headers(request: Union[Request, FlaskRequest]) -> Dict:
     return {str(key).lower(): value for key, value in dict(request.headers).items()}
+
+
+def set_redirect_url():
+
+    # Get the URL of the page that got us here
+    if request.args.get("next") is not None:
+        session["next"] = request.args.get("next")

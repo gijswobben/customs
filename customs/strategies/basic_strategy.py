@@ -1,18 +1,29 @@
 import base64
 
-from customs.strategies.basestrategy import BaseStrategy
-from customs.exceptions import UnauthorizedException
-
 from typing import Any, Dict, Union
 
+from abc import ABC, abstractmethod
 from flask import Request as FlaskRequest
 from werkzeug.wrappers import Request
+
 from customs.helpers import parse_headers
+from customs.exceptions import UnauthorizedException
+from customs.strategies.basestrategy import BaseStrategy
 
 
-class BasicStrategy(BaseStrategy):
+class BasicStrategy(BaseStrategy, ABC):
 
     name: str = "basic"
+
+    def __init__(self) -> None:
+        super().__init__(
+            serialize_user_function=None,
+            deserialize_user_function=None,
+        )
+
+    @abstractmethod
+    def validate_credentials(self, username: str, password: str) -> Dict:
+        ...
 
     def extract_credentials(
         self, request: Union[Request, FlaskRequest]
@@ -44,4 +55,4 @@ class BasicStrategy(BaseStrategy):
         # Test authentication
         if username is None or password is None:
             raise UnauthorizedException()  # pragma: no cover
-        return self._authentication_function(username, password)
+        return self.validate_credentials(username, password)

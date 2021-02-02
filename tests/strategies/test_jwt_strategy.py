@@ -9,18 +9,20 @@ from customs.strategies import JWTStrategy
 
 
 def test_jwt_strategy_initialization_without_customs():
-    def authentication_function(username: str, password: str) -> Dict:
-        return {}
+    class JWT(JWTStrategy):
+        def get_or_create_user(self, user: Dict) -> Dict:
+            return super().get_or_create_user(user)
 
     with pytest.warns(UserWarning):
-        strategy = JWTStrategy(authentication_function)
+        strategy = JWT()
 
     assert strategy.name == "jwt"
 
 
 def test_jwt_strategy_initialization_with_customs():
-    def authentication_function(username: str, password: str) -> Dict:
-        return {}
+    class JWT(JWTStrategy):
+        def get_or_create_user(self, user: Dict) -> Dict:
+            return super().get_or_create_user(user)
 
     # Create customs
     app = Flask("TESTS")
@@ -28,7 +30,7 @@ def test_jwt_strategy_initialization_with_customs():
     Customs(app)
 
     # Create the strategy
-    strategy = JWTStrategy(authentication_function)
+    strategy = JWT()
 
     assert strategy.name == "jwt"
 
@@ -37,8 +39,9 @@ def test_jwt_strategy_initialization_with_customs():
 
 
 def test_jwt_strategy_extract_crendentials():
-    def authentication_function(username: str, password: str) -> Dict:
-        return {}
+    class JWT(JWTStrategy):
+        def get_or_create_user(self, user: Dict) -> Dict:
+            return super().get_or_create_user(user)
 
     # Create customs
     app = Flask("TESTS")
@@ -46,7 +49,7 @@ def test_jwt_strategy_extract_crendentials():
     Customs(app)
 
     # Create the strategy
-    strategy = JWTStrategy(authentication_function)
+    strategy = JWT()
 
     with app.test_request_context("/?test=123", json={"bla": "bla"}):
         credentials = strategy.extract_credentials(request)
@@ -64,11 +67,9 @@ def test_jwt_strategy_extract_crendentials():
 
 
 def test_jwt_strategy_authenticate():
-    def authentication_function(username: str, password: str) -> Dict:
-        if username == "test" and password == "test":
-            return {}
-        else:
-            raise UnauthorizedException()
+    class JWT(JWTStrategy):
+        def get_or_create_user(self, user: Dict) -> Dict:
+            return super().get_or_create_user(user)
 
     # Create customs
     app = Flask("TESTS")
@@ -76,7 +77,7 @@ def test_jwt_strategy_authenticate():
     Customs(app)
 
     # Create the strategy
-    strategy = JWTStrategy(authentication_function)
+    strategy = JWT()
 
     with app.test_request_context("/?test=123", json={"bla": "bla"}):
 
@@ -95,11 +96,9 @@ def test_jwt_strategy_authenticate():
 
 
 def test_jwt_strategy_authenticate_invalid_token():
-    def authentication_function(username: str, password: str) -> Dict:
-        if username == "test" and password == "test":
-            return {}
-        else:
-            raise UnauthorizedException()
+    class JWT(JWTStrategy):
+        def get_or_create_user(self, user: Dict) -> Dict:
+            return super().get_or_create_user(user)
 
     # Create customs
     app = Flask("TESTS")
@@ -107,7 +106,7 @@ def test_jwt_strategy_authenticate_invalid_token():
     Customs(app)
 
     # Create the strategy
-    strategy = JWTStrategy(authentication_function)
+    strategy = JWT()
 
     with app.test_request_context("/?test=123", json={"bla": "bla"}):
 

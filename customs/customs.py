@@ -5,7 +5,12 @@ import warnings
 
 from datetime import timedelta
 from flask import Flask, Blueprint, request, session
+from werkzeug.utils import redirect
 from customs.exceptions import UnauthorizedException
+from customs.strategies.basestrategy import BaseStrategy
+
+import urllib.parse as urlparse
+from urllib.parse import urlencode
 
 from types import MethodType
 from typing import (  # type: ignore
@@ -24,7 +29,6 @@ from typing import (  # type: ignore
 )
 
 if TYPE_CHECKING:
-    from customs.strategies.basestrategy import BaseStrategy
     from wsgiref.types import StartResponse
 
 
@@ -86,6 +90,7 @@ class Customs(metaclass=_Singleton):
         use_sessions: bool = True,
         session_timeout: timedelta = timedelta(days=31),
         user_class: Type = dict,
+        unauthorized_redirect_url: Optional[str] = None,
     ) -> None:
 
         # Make sure the user has set a secret
@@ -105,6 +110,7 @@ class Customs(metaclass=_Singleton):
         # Store input arguments
         self.use_sessions = use_sessions
         self.user_class = user_class
+        self.unauthorized_redirect_url = unauthorized_redirect_url
 
         # Define placeholders for the strategies in use, and registered available strategies
         self.strategies: Dict[str, BaseStrategy] = {}
@@ -148,7 +154,7 @@ class Customs(metaclass=_Singleton):
         raise exceptions[0]
 
     def _grant_access(self, user: User):
-        """ Method to grant access to the user information in the view function. Will add the user
+        """Method to grant access to the user information in the view function. Will add the user
         information as an argument to the view function, if the function accepts the "user" argument.
 
         Args:
@@ -156,7 +162,9 @@ class Customs(metaclass=_Singleton):
         """
 
         # Get the view_function that the user wants access to
-        assert request.url_rule is not None, "Unable to match view function, no url_rule attribute for the request"
+        assert (
+            request.url_rule is not None
+        ), "Unable to match view function, no url_rule attribute for the request"
         view_function = self.app.view_functions.get(request.url_rule.endpoint)
         assert view_function is not None, "View function not found"
 
@@ -176,7 +184,7 @@ class Customs(metaclass=_Singleton):
             request.view_args["user"] = user
 
     def _check_session(self) -> Optional[User]:
-        """ Check the session object (when using sessions) to ensure the user has been
+        """Check the session object (when using sessions) to ensure the user has been
         authenticated before.
 
         Returns:
@@ -191,8 +199,11 @@ class Customs(metaclass=_Singleton):
                 return None
 
             # Deserialize the user data from the session into a full user object
-            user: User = strategy.deserialize_user(session["user"])
-            return user
+            try:
+                user: User = strategy.deserialize_user(session["user"])
+                return user
+            except UnauthorizedException:
+                return None
 
         # Not using sessions or no pre-authorized user found
         else:
@@ -226,10 +237,19 @@ class Customs(metaclass=_Singleton):
                         session["strategy"] = strategy.name
 
                 except UnauthorizedException as e:
+                    if self.unauthorized_redirect_url is not None:
+                        return self.redirect(self.unauthorized_redirect_url)
                     return e.message, e.status_code
 
             # 3: Handle view function
             self._grant_access(user=user)
+
+    def redirect(self, target: str):
+        url_parts = list(urlparse.urlparse(target))
+        query = dict(urlparse.parse_qsl(url_parts[4]))
+        query.update({"next": request.url})
+        url_parts[4] = urlencode(query)
+        return redirect(urlparse.urlunparse(url_parts))
 
     def register_strategy(self, name: str, strategy: BaseStrategy) -> Customs:
         """Register a strategy without using it for every route. Makes the strategy
@@ -242,38 +262,23 @@ class Customs(metaclass=_Singleton):
         Returns:
             Customs: Returns this instance of customs for chaining
         """
+
+        # Register strategy specific routes
+        strategy.register_additional_routes(app=self.app)
+
         # Store the strategy
         self.available_strategies[name] = strategy
+
         return self
 
-    # def is_authenticated(self) -> bool:
-    #     return session.get("is_authenticated", False)
-
-    # def ensure_authenticated(self, func: Callable) -> Callable:
-    #     """Decorator method that wraps a view function so it can only be accessed by
-    #     authenticated users.
-
-    #     Args:
-    #         func (Callable): The function to decorate
-
-    #     Returns:
-    #         Callable: The decorated function
-    #     """
-
-    #     def wrapper(*args, **kwargs):
-    #         if self.is_authenticated():
-    #             return func(*args, **kwargs)
-    #         else:
-    #             return "Unauthorized", 401
-
-    #     wrapper.__name__ = func.__name__
-    #     return wrapper
-
-    def protect(self, strategies: Union[List[str], str]) -> Callable:
+    def protect(
+        self, strategies: Union[List[Union[str, BaseStrategy]], str, BaseStrategy]
+    ) -> Callable:
         """Decorator method that protects a specific route, using a set of strategies.
 
         Args:
-            strategies (Union[List[str], str]): The strategy or list of strategies to use for protection
+            strategies (Union[List[Union[str, BaseStrategy]], str, BaseStrategy]): The strategy or list of
+                strategies to use for protection
 
         Returns:
             Callable: The wrapped view function
@@ -291,15 +296,18 @@ class Customs(metaclass=_Singleton):
 
         # Convert the names of strategies back to strategy objects
         strategy_objects: List[BaseStrategy] = []
-        for strategy_name in strategies:
-            strategy = self.available_strategies.get(strategy_name)
-            if strategy is None:
-                warnings.warn(
-                    f"No strategy named '{strategy}' registered in Customs."
-                    f"Available strategies are: {', '.join(self.available_strategies.keys())}"
-                )
-            else:
+        for strategy in strategies:
+            if isinstance(strategy, BaseStrategy):
                 strategy_objects.append(strategy)
+            else:
+                strategy_object = self.available_strategies.get(strategy)
+                if strategy_object is None:
+                    warnings.warn(
+                        f"No strategy named '{strategy}' registered in Customs."
+                        f"Available strategies are: {', '.join(self.available_strategies.keys())}"
+                    )
+                else:
+                    strategy_objects.append(strategy_object)
 
         def func_wrapper(func: Callable) -> Callable:
             def wrapper(*args, **kwargs):
@@ -323,6 +331,8 @@ class Customs(metaclass=_Singleton):
                             session["strategy"] = strategy.name
 
                     except UnauthorizedException as e:
+                        if self.unauthorized_redirect_url is not None:
+                            return self.redirect(self.unauthorized_redirect_url)
                         return e.message, e.status_code
 
                 # 3: Handle view function
@@ -338,7 +348,9 @@ class Customs(metaclass=_Singleton):
 
         return func_wrapper
 
-    def safe_zone(self, zone: Union[Blueprint, Flask], strategies: List[str]):
+    def safe_zone(
+        self, zone: Union[Blueprint, Flask], strategies: List[Union[str, BaseStrategy]]
+    ):
         """Create a zone/section of the app that is protected with specific strategies. The
         zone can be an entire Flask application, or a section of the app in the form of a Blueprint.
 
@@ -381,26 +393,22 @@ class Customs(metaclass=_Singleton):
             # Loop the listed strategies
             for strategy in strategies:
 
-                # Get the strategy from the available strategies
-                strategy_object = self.available_strategies.get(strategy)
-                if strategy_object is None:
-                    warnings.warn(
-                        f"Strategy '{strategy}' is not registered with Customs and will be ignored"
-                    )
+                if isinstance(strategy, BaseStrategy):
+                    self.strategies[strategy.name] = strategy
+
                 else:
-                    self.strategies[strategy] = strategy_object
+
+                    # Get the strategy from the available strategies
+                    strategy_object = self.available_strategies.get(strategy)
+                    if strategy_object is None:
+                        warnings.warn(
+                            f"Strategy '{strategy}' is not registered with Customs and will be ignored"
+                        )
+                    else:
+                        self.strategies[strategy] = strategy_object
 
             return zone
 
     def __call__(self, environ: Dict, start_response: StartResponse) -> Any:
         # Call the original WSGI app (without modifications)
         return self.wsgi_app(environ, start_response)
-
-
-# X-ray
-# Clearance
-# Declaration
-# Stamps
-# Passport
-# Duty free
-# Terminal/Gate
