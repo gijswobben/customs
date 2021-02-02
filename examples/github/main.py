@@ -1,3 +1,5 @@
+import os
+
 from typing import Any, Dict
 from flask import Flask
 from flask.templating import render_template
@@ -9,8 +11,8 @@ from customs.exceptions import UnauthorizedException
 
 
 # App credentials for Github
-client_id = "6ce66771fcedd45e79c1"
-client_secret = "d64af639b51e872664c73f4fb24c94ed19cdfcad"
+client_id = os.environ.get("GITHUB_CLIENT_ID")
+client_secret = os.environ.get("GITHUB_CLIENT_SECRET")
 
 # Create the Flask app
 app = Flask(__name__)

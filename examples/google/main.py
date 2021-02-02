@@ -1,3 +1,5 @@
+import os
+
 from typing import Any, Dict
 from flask import Flask
 from flask.templating import render_template
@@ -9,8 +11,8 @@ from customs.exceptions import UnauthorizedException
 
 
 # App credentials for Google
-client_id = "1055966716655-q2cj835ne4ousb4j85j5tmg3mpva5gn1.apps.googleusercontent.com"
-client_secret = "E1BnzTsEG0Rc4_jI8pGGmls3"
+client_id = os.environ.get("GOOGLE_CLIENT_ID")
+client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
 
 # Create the Flask app
 app = Flask(__name__)
