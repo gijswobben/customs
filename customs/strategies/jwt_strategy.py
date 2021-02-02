@@ -1,7 +1,7 @@
 import random
 import string
 
-from customs.strategies.basestrategy import BaseStrategy
+from customs.strategies.base_strategy import BaseStrategy
 
 from typing import Any, Dict, Optional, Union
 

@@ -7,7 +7,7 @@ from datetime import timedelta
 from flask import Flask, Blueprint, request, session
 from werkzeug.utils import redirect
 from customs.exceptions import UnauthorizedException
-from customs.strategies.basestrategy import BaseStrategy
+from customs.strategies.base_strategy import BaseStrategy
 
 import urllib.parse as urlparse
 from urllib.parse import urlencode

@@ -15,7 +15,7 @@ from werkzeug.wrappers import Request
 from requests_oauthlib import OAuth2Session  # type: ignore
 
 from customs.exceptions import UnauthorizedException
-from customs.strategies.basestrategy import BaseStrategy
+from customs.strategies.base_strategy import BaseStrategy
 
 from typing import Any, Dict, List, Union
 

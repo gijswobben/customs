@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from customs.exceptions import UnauthorizedException
-from customs.strategies.basestrategy import BaseStrategy
+from customs.strategies.base_strategy import BaseStrategy
 
 from typing import Any, Dict, Union
 

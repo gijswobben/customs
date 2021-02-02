@@ -8,7 +8,7 @@ from werkzeug.wrappers import Request
 
 from customs.helpers import parse_headers
 from customs.exceptions import UnauthorizedException
-from customs.strategies.basestrategy import BaseStrategy
+from customs.strategies.base_strategy import BaseStrategy
 
 
 class BasicStrategy(BaseStrategy, ABC):

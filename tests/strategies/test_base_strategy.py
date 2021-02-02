@@ -1,4 +1,4 @@
-from customs.strategies.basestrategy import BaseStrategy
+from customs.strategies.base_strategy import BaseStrategy
 
 
 def concreter(abclass):
