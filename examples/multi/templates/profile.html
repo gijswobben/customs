@@ -1,0 +1,20 @@
+<html>
+    <body>
+        <h1>Profile</h1>
+        <table>
+            <tbody>
+                {% if "avatar_url" in user %}
+                <tr>
+                    <td><img src="{{ user.avatar_url }}"></td>
+                    <td>{{ user.name }}</td>
+                </tr>
+                {% elif "picture" in user %}
+                <tr>
+                    <td><img src="{{ user.picture }}"></td>
+                    <td>{{ user.name }}</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </body>
+</html>
