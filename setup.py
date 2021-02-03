@@ -29,7 +29,14 @@ setuptools.setup(
         "requests",
         "requests_oauthlib",
     ],
-    tests_require=["pytest", "pytest-cov"],
+    extras_require={
+        "test": [
+            "pytest",
+            "pytest-cov",
+            "mypy",
+            "flake8",
+        ],
+    },
     python_requires=">=3.8",
     classifiers=[
         "Topic :: Utilities",
