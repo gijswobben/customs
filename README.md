@@ -17,5 +17,6 @@ Customs comes out of the box with the following strategies:
 - JWT
 - Google
 - Github
+- Facebook
 
 The list is growing, but if you still cannot find what you're looking for it is very easy to create a specific strategy for your purpose.

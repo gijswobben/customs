@@ -8,6 +8,7 @@ from customs.strategies.basic_strategy import BasicStrategy
 from customs.strategies.jwt_strategy import JWTStrategy
 from customs.strategies.google_strategy import GoogleStrategy
 from customs.strategies.github_strategy import GithubStrategy
+from customs.strategies.facebook_strategy import FacebookStrategy
 
 
-__all__ = ["LocalStrategy", "BasicStrategy", "JWTStrategy", "GoogleStrategy", "GithubStrategy"]
+__all__ = ["LocalStrategy", "BasicStrategy", "JWTStrategy", "GoogleStrategy", "GithubStrategy", "FacebookStrategy"]

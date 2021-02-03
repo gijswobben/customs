@@ -13,6 +13,7 @@ from flask import (
 )
 from werkzeug.wrappers import Request
 from requests_oauthlib import OAuth2Session  # type: ignore
+from requests_oauthlib.compliance_fixes import facebook_compliance_fix  # type: ignore
 
 from customs.exceptions import UnauthorizedException
 from customs.strategies.base_strategy import BaseStrategy
@@ -170,6 +171,9 @@ class OAuth2Strategy(BaseStrategy):
                 token_updater=token_updater,
             )
 
+            if self.name == "facebook":
+                facebook_compliance_fix(client)
+
             # Return the user info
             return client.get(self.user_profile_endpoint).json()
 
@@ -227,6 +231,10 @@ class OAuth2Strategy(BaseStrategy):
                 scope=self.scopes,
                 redirect_uri=url_for(".callback", _external=True),
             )
+
+            if self.name == "facebook":
+                facebook_compliance_fix(client)
+
             authorization_url, state = client.authorization_url(
                 self.authorization_base_url,
                 access_type="offline",
@@ -244,6 +252,10 @@ class OAuth2Strategy(BaseStrategy):
                 state=session["oauth_state"],
                 redirect_uri=url_for(".callback", _external=True),
             )
+
+            if self.name == "facebook":
+                facebook_compliance_fix(client)
+
             self.token = client.fetch_token(
                 self.token_url,
                 client_secret=self.client_secret,

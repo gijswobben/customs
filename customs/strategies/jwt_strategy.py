@@ -69,7 +69,7 @@ class JWTStrategy(BaseStrategy):
             decoded = jwt.decode(token, self.key)
             return self.deserialize_user(decoded)
 
-        except Exception as e:
+        except Exception:
             raise UnauthorizedException()
 
     def sign(self, user: Any) -> str:
