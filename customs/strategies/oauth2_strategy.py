@@ -1,7 +1,7 @@
 import os
 import warnings
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from flask import (
     Flask,
     Blueprint,
@@ -20,7 +20,17 @@ from customs.strategies.base_strategy import BaseStrategy
 from typing import Any, Dict, List, Optional, Union
 
 
-class OAuth2Strategy(BaseStrategy, ABC):
+class OAuth2Strategy(BaseStrategy):
+    """[summary]
+
+    Args:
+        client_id (str): [description]
+        client_secret (str): [description]
+        scopes (Optional[List[str]], optional): [description]. Defaults to None.
+        enable_insecure (bool, optional): [description]. Defaults to False.
+        endpoint_prefix (Optional[str], optional): [description]. Defaults to None.
+    """
+
     def __init__(
         self,
         client_id: str,

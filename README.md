@@ -4,13 +4,18 @@
 [![PythonVersion](https://img.shields.io/pypi/pyversions/customs?color=%233775A9&label=Python%20versions&logo=Python&logoColor=%23959da5&style=for-the-badge)](https://pypi.org/project/customs/)
 [![ReadTheDocs](https://img.shields.io/badge/READTHEDOCS-Available-555555?style=for-the-badge&color=brightgreen&logo=Read%20the%20docs&logoColor=%23959da5)](https://customs.readthedocs.io/en/latest/index.html)
 # Customs - Authentication made easy
-Passport.js inspired library for setting up server authentication in Python.
+Passport.js inspired library for setting up server authentication in Python. Customs creates a protective layer around Flask APIs with minimal configuration and allows users to configure and use multiple authentication strategies with ease.
 
+## Concept
+Customs consists of a single *customs* object that can use *strategies* to *protect* API endpoints, or create a *safe_zone* around a set of endpoints.
 
-## Initialize GitHooks
-Git hooks can be used to automate certain version control steps, e.g. run tests and style checks before committing. Git hooks for this repository can be found at `./.githooks`, but have to be initialized manually on the development machine with this command:
+## Batteries included
+Customs comes out of the box with the following strategies:
 
-```
-chmod +x .githooks/prepare-commit-msg
-git config core.hooksPath .githooks
-```
+- Local
+- Basic
+- JWT
+- Google
+- Github
+
+The list is growing, but if you still cannot find what you're looking for it is very easy to create a specific strategy for your purpose.

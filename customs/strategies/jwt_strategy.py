@@ -13,6 +13,8 @@ from jose import jwt  # type: ignore
 
 
 class JWTStrategy(BaseStrategy):
+    """Authentication using JWT tokens.
+    """
 
     name: str = "jwt"
 
@@ -41,6 +43,20 @@ class JWTStrategy(BaseStrategy):
         return {}
 
     def authenticate(self, request: Union[Request, FlaskRequest]) -> Any:
+        """Method that will extract the JWT authorization header from the request,
+        and will then call the `deserialize_user` method with the decoded content of the token.
+        The `validate_credentials` method should be implemented by the user. This method is called
+        by Customs internally and is not intended for external use.
+
+        Args:
+            request (Union[Request, FlaskRequest]): The incoming request (usually a Flask request)
+
+        Raises:
+            UnauthorizedException: Raised when the user is not authorized (invalid or missing credentials)
+
+        Returns:
+            Dict: The user information
+        """
 
         # Get the token
         credentials = self.extract_credentials(request)
@@ -54,7 +70,6 @@ class JWTStrategy(BaseStrategy):
             return self.deserialize_user(decoded)
 
         except Exception as e:
-            print(e)
             raise UnauthorizedException()
 
     def sign(self, user: Any) -> str:

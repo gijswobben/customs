@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from customs.exceptions import UnauthorizedException
 from customs.strategies.base_strategy import BaseStrategy
 
@@ -9,7 +9,9 @@ from werkzeug.wrappers import Request
 from customs.helpers import parse_content
 
 
-class LocalStrategy(BaseStrategy, ABC):
+class LocalStrategy(BaseStrategy):
+    """Authentication using request information (e.g. arguments) with username and password.
+    """
 
     name: str = "local"
 

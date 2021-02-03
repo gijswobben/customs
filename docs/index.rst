@@ -1,11 +1,12 @@
 .. include:: README.rst
 
+.. mdinclude:: ./quickstart.md
+
 .. toctree::
    :maxdepth: 2
    :hidden:
 
    self
-   quickstart
 
 .. toctree::
    :caption: Usage
@@ -13,10 +14,12 @@
    :hidden:
 
    installation
+   api
 
 .. toctree::
    :caption: About
    :maxdepth: 2
    :hidden:
 
+   development
    license

@@ -6,6 +6,8 @@ from customs.strategies.oauth2_strategy import OAuth2Strategy
 
 
 class GoogleStrategy(OAuth2Strategy):
+    """Authentication using Google as an OAuth2 provider.
+    """
 
     name = "google"
     scopes = [
@@ -19,7 +21,7 @@ class GoogleStrategy(OAuth2Strategy):
     user_profile_endpoint = "https://www.googleapis.com/oauth2/v1/userinfo"
 
     def validate_token(self) -> Dict:
-        """Method to validate a Github token with Github.
+        """Method to validate a Google token with Google.
 
         Raises:
             UnauthorizedException: When the user isn't authenticated or token is not valid

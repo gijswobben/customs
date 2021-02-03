@@ -75,13 +75,21 @@ class _Singleton(type):
 class Customs(metaclass=_Singleton):
     """Customs is a protective layer that makes sure every incoming request is properly
     authenticated and checked. Customs can define "safe zones", like parts of your API, or
-    protect individual routes.
+    protect individual routes. Customs is intended as middleware for Flask applications.
 
     Args:
         app (Flask): The Flask application to mount this middleware on
         use_sessions (bool, optional): Whether or not to use sessions for storing user information. Defaults to True.
         session_timeout (timedelta, optional): The default expiration time for sessions. Defaults to timedelta(days=31).
         user_class (Type, optional): The class to use for parsing user information. Defaults to dict.
+        unauthorized_redirect_url (str, optional): The URL to redirect to when a user tries to access an
+            endpoint without proper authorization
+
+    Examples:
+        >>> from flask import Flask
+        >>> from customs import Customs
+        >>> app = Flask(__name__)
+        >>> customs = Customs(app)
     """
 
     def __init__(
@@ -238,13 +246,13 @@ class Customs(metaclass=_Singleton):
 
                 except UnauthorizedException as e:
                     if self.unauthorized_redirect_url is not None:
-                        return self.redirect(self.unauthorized_redirect_url)
+                        return self._redirect(self.unauthorized_redirect_url)
                     return e.message, e.status_code
 
             # 3: Handle view function
             self._grant_access(user=user)
 
-    def redirect(self, target: str):
+    def _redirect(self, target: str):
         url_parts = list(urlparse.urlparse(target))
         query = dict(urlparse.parse_qsl(url_parts[4]))
         query.update({"next": request.url})
@@ -253,7 +261,8 @@ class Customs(metaclass=_Singleton):
 
     def register_strategy(self, name: str, strategy: BaseStrategy) -> Customs:
         """Register a strategy without using it for every route. Makes the strategy
-        available by its name.
+        available by its name. Most strategies auto-register, so this method should not be
+        needed very often.
 
         Args:
             name (str): The name of the strategy
@@ -278,10 +287,17 @@ class Customs(metaclass=_Singleton):
 
         Args:
             strategies (Union[List[Union[str, BaseStrategy]], str, BaseStrategy]): The strategy or list of
-                strategies to use for protection
+                strategies to use for protection. Can be a list of strategy names, list of strategy objects
+                or an individual strategy by name or as object.
 
         Returns:
             Callable: The wrapped view function
+
+        Examples:
+            >>> @app.route("/test")
+            ... @customs.protect(strategies=["basic"])
+            ... def test_route():
+            ...     return "Success"
         """
 
         # Make sure we have a list of strategies
@@ -332,7 +348,7 @@ class Customs(metaclass=_Singleton):
 
                     except UnauthorizedException as e:
                         if self.unauthorized_redirect_url is not None:
-                            return self.redirect(self.unauthorized_redirect_url)
+                            return self._redirect(self.unauthorized_redirect_url)
                         return e.message, e.status_code
 
                 # 3: Handle view function
@@ -360,6 +376,14 @@ class Customs(metaclass=_Singleton):
 
         Returns:
             Union[Blueprint, Flask]: The (now protected) input zone
+
+        Examples:
+            >>> from flask import Flask
+            >>> from customs import Customs
+            >>> app = Flask(__name__)
+            >>> customs = Customs(app)
+            >>> # Define routes here ...
+            >>> customs.safe_zone(app, strategies=["basic"])
         """
 
         # Protect all endpoints in a blueprint

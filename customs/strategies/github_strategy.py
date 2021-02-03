@@ -6,6 +6,8 @@ from customs.strategies.oauth2_strategy import OAuth2Strategy
 
 
 class GithubStrategy(OAuth2Strategy):
+    """Authentication using Github as an OAuth2 provider.
+    """
 
     name = "github"
     scopes = ["user"]
