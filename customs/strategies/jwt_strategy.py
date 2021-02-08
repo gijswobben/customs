@@ -42,7 +42,7 @@ class JWTStrategy(BaseStrategy):
 
         return {}
 
-    def authenticate(self, request: Union[Request, FlaskRequest]) -> Any:
+    def authenticate(self, request: Union[Request, FlaskRequest], **kwargs) -> Any:
         """Method that will extract the JWT authorization header from the request,
         and will then call the `deserialize_user` method with the decoded content of the token.
         The `validate_credentials` method should be implemented by the user. This method is called

@@ -32,7 +32,7 @@ class LocalStrategy(BaseStrategy):
             print(e)
         return {}
 
-    def authenticate(self, request: Union[Request, FlaskRequest]) -> Any:
+    def authenticate(self, request: Union[Request, FlaskRequest], **kwargs) -> Any:
         credentials = self.extract_credentials(request)
         username = credentials.get("username")
         password = credentials.get("password")

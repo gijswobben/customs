@@ -1,0 +1,10 @@
+<h1>Authenticator setup</h1>
+
+<img src="data:image/png;base64,{{qr_code}}"/>
+
+<p>Scan the code above with an authenticator app (e.g. Google Authenticator), and fill out a code below to verify.</p>
+
+<form action="/enable_authenticator" method="POST">
+    <input type="text" name="otp" placeholder="Authenticator code" />
+    <button type="submit">Submit</button>
+</form>

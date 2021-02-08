@@ -1,0 +1,12 @@
+<h1>Registration</h1>
+
+<form action="/register" method="POST">
+    <input type="text" name="username" placeholder="Username" /><br />
+    <input type="password" name="password" placeholder="Password" /><br />
+    <input type="password" name="repeat_password" placeholder="Repeat password" /><br />
+    <button type="submit">Register</button>
+</form>
+
+{% if error %}
+<p>{{error}}</p>
+{% endif %}

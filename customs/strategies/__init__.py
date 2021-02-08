@@ -9,6 +9,16 @@ from customs.strategies.jwt_strategy import JWTStrategy
 from customs.strategies.google_strategy import GoogleStrategy
 from customs.strategies.github_strategy import GithubStrategy
 from customs.strategies.facebook_strategy import FacebookStrategy
+from customs.strategies.api_key_strategy import APIKeyStrategy
+from customs.strategies.authenticator_app_strategy import AuthenticatorAppStrategy
 
-
-__all__ = ["LocalStrategy", "BasicStrategy", "JWTStrategy", "GoogleStrategy", "GithubStrategy", "FacebookStrategy"]
+__all__ = [
+    "LocalStrategy",
+    "BasicStrategy",
+    "JWTStrategy",
+    "GoogleStrategy",
+    "GithubStrategy",
+    "FacebookStrategy",
+    "APIKeyStrategy",
+    "AuthenticatorAppStrategy",
+]

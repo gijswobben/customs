@@ -95,7 +95,6 @@ def login():
 @app.route("/profile")
 @customs.protect(strategies=[facebook])
 def profile(user: Dict):
-    print(user)
     return render_template("profile.html", user=user)
 
 

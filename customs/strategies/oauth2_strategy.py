@@ -192,7 +192,7 @@ class OAuth2Strategy(BaseStrategy):
 
         return {}
 
-    def authenticate(self, request: Union[Request, FlaskRequest]) -> Any:
+    def authenticate(self, request: Union[Request, FlaskRequest], **kwargs) -> Any:
         """Method to authenticate a user.
 
         Args:

@@ -17,8 +17,12 @@ def parse_data(request: Union[Request, FlaskRequest]) -> Dict:
         return {}
 
 
+def parse_form(request: Union[Request, FlaskRequest]) -> Dict:
+    return dict(request.form)
+
+
 def parse_content(request: Union[Request, FlaskRequest]) -> Dict:
-    return {**parse_args(request), **parse_data(request)}
+    return {**parse_args(request), **parse_data(request), **parse_form(request)}
 
 
 def parse_headers(request: Union[Request, FlaskRequest]) -> Dict:

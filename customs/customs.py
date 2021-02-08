@@ -1,4 +1,5 @@
 from __future__ import annotations
+from customs.strategies.authenticator_app_strategy import AuthenticatorNotEnabledException
 
 import inspect
 import warnings
@@ -122,6 +123,7 @@ class Customs(metaclass=_Singleton):
 
         # Define placeholders for the strategies in use, and registered available strategies
         self.strategies: Dict[str, BaseStrategy] = {}
+        self.additional_strategies: Dict[str, BaseStrategy] = {}
         self.available_strategies: Dict[str, BaseStrategy] = {}
 
         # Make sessions timeout
@@ -131,7 +133,7 @@ class Customs(metaclass=_Singleton):
         self.app.before_request(self._before_request)
 
     def _check_passport(
-        self, strategies: Iterable[BaseStrategy]
+        self, strategies: Iterable[BaseStrategy], user: Optional[Dict] = None
     ) -> Tuple[User, BaseStrategy]:
         """Check the identity of the user (check their passport) using the strategies.
 
@@ -151,8 +153,8 @@ class Customs(metaclass=_Singleton):
 
             # Try to authenticate the user using the strategy
             try:
-                user = strategy.authenticate(request)
-                return user, strategy
+                authenticated_user = strategy.authenticate(request, user=user)
+                return authenticated_user, strategy
 
             # Store any unauthorized exceptions
             except UnauthorizedException as e:
@@ -191,7 +193,7 @@ class Customs(metaclass=_Singleton):
         ):
             request.view_args["user"] = user
 
-    def _check_session(self) -> Optional[User]:
+    def _check_session(self) -> Tuple[Optional[User], bool]:
         """Check the session object (when using sessions) to ensure the user has been
         authenticated before.
 
@@ -204,18 +206,23 @@ class Customs(metaclass=_Singleton):
             # Get the strategy that was used to identify the user before
             strategy = self.available_strategies.get(session["strategy"])
             if strategy is None:
-                return None
+                return None, False
 
             # Deserialize the user data from the session into a full user object
             try:
                 user: User = strategy.deserialize_user(session["user"])
-                return user
+
+                if "additional_strategies_completed" in session:
+                    return user, session["additional_strategies_completed"]
+                else:
+                    return user, False
+
             except UnauthorizedException:
-                return None
+                return None, False
 
         # Not using sessions or no pre-authorized user found
         else:
-            return None
+            return None, False
 
     def _before_request(self):
         """Method that runs before every request. Should check the request using
@@ -281,7 +288,11 @@ class Customs(metaclass=_Singleton):
         return self
 
     def protect(
-        self, strategies: Union[List[Union[str, BaseStrategy]], str, BaseStrategy]
+        self,
+        strategies: Union[List[Union[str, BaseStrategy]], str, BaseStrategy],
+        additional_strategies: Union[
+            List[Union[str, BaseStrategy]], str, BaseStrategy
+        ] = [],
     ) -> Callable:
         """Decorator method that protects a specific route, using a set of strategies.
 
@@ -289,6 +300,8 @@ class Customs(metaclass=_Singleton):
             strategies (Union[List[Union[str, BaseStrategy]], str, BaseStrategy]): The strategy or list of
                 strategies to use for protection. Can be a list of strategy names, list of strategy objects
                 or an individual strategy by name or as object.
+            additional_strategies (Union[List[Union[str, BaseStrategy]], str, BaseStrategy]): Additional strategies
+                that need to be matched after the original strategies (for MFA).
 
         Returns:
             Callable: The wrapped view function
@@ -325,11 +338,37 @@ class Customs(metaclass=_Singleton):
                 else:
                     strategy_objects.append(strategy_object)
 
+
+        # Make sure we have a list of strategies
+        if not isinstance(
+            additional_strategies,
+            (
+                list,
+                tuple,
+            ),
+        ):
+            additional_strategies = [additional_strategies]
+
+        # Convert the names of additional strategies back to strategy objects
+        additional_strategy_objects: List[BaseStrategy] = []
+        for additional_strategy in additional_strategies:
+            if isinstance(additional_strategy, BaseStrategy):
+                additional_strategy_objects.append(additional_strategy)
+            else:
+                additional_strategy_object = self.available_strategies.get(additional_strategy)
+                if additional_strategy_object is None:
+                    warnings.warn(
+                        f"No strategy named '{additional_strategy}' registered in Customs."
+                        f"Available strategies are: {', '.join(self.available_strategies.keys())}"
+                    )
+                else:
+                    additional_strategy_objects.append(additional_strategy_object)
+
         def func_wrapper(func: Callable) -> Callable:
             def wrapper(*args, **kwargs):
 
                 # 1. Check session info
-                user = self._check_session()
+                user, additional_strategies_completed = self._check_session()
 
                 # No info found from the session
                 if user is None:
@@ -346,10 +385,32 @@ class Customs(metaclass=_Singleton):
                             session["user"] = serialized_user
                             session["strategy"] = strategy.name
 
+                        # Check additional strategies (MFA)
+                        if len(additional_strategies) > 0:
+                            self._check_passport(strategies=additional_strategies, user=user)
+
+                        if self.use_sessions:
+                            session["additional_strategies_completed"] = True
+
                     except UnauthorizedException as e:
                         if self.unauthorized_redirect_url is not None:
                             return self._redirect(self.unauthorized_redirect_url)
                         return e.message, e.status_code
+
+                elif not additional_strategies_completed and len(additional_strategies) > 0:
+                    print("Partially authenticated")
+                    # Check additional strategies (MFA)
+                    try:
+                        self._check_passport(strategies=additional_strategies, user=user)
+                        if self.use_sessions:
+                            session["additional_strategies_completed"] = True
+                    except UnauthorizedException as e:
+                        if self.unauthorized_redirect_url is not None:
+                            return self._redirect(self.unauthorized_redirect_url)
+                        return e.message, e.status_code
+                    except AuthenticatorNotEnabledException as e:
+                        print(e)
+                        return self._redirect(e.target)
 
                 # 3: Handle view function
                 # Add the user as argument to the handler function
@@ -365,7 +426,7 @@ class Customs(metaclass=_Singleton):
         return func_wrapper
 
     def safe_zone(
-        self, zone: Union[Blueprint, Flask], strategies: List[Union[str, BaseStrategy]]
+        self, zone: Union[Blueprint, Flask], strategies: List[Union[str, BaseStrategy]], additional_strategies: List[Union[str, BaseStrategy]] = []
     ):
         """Create a zone/section of the app that is protected with specific strategies. The
         zone can be an entire Flask application, or a section of the app in the form of a Blueprint.
@@ -373,6 +434,7 @@ class Customs(metaclass=_Singleton):
         Args:
             zone (Union[Blueprint, Flask]): The zone to protect
             strategies (List[str]): The names of the strategies to use
+            additional_strategies (List[str]): The names of the additional (MFA) strategies to use
 
         Returns:
             Union[Blueprint, Flask]: The (now protected) input zone
@@ -399,7 +461,7 @@ class Customs(metaclass=_Singleton):
                     ), "Blueprint endpoints should not contain dots"
                 if view_func and hasattr(view_func, "__name__"):
                     # Protect (wrap) the view_func with the strategies
-                    view_func = self.protect(strategies=strategies)(view_func)
+                    view_func = self.protect(strategies=strategies, additional_strategies=additional_strategies)(view_func)
                     assert (
                         "." not in view_func.__name__
                     ), "Blueprint view function name should not contain dots"
@@ -430,6 +492,23 @@ class Customs(metaclass=_Singleton):
                         )
                     else:
                         self.strategies[strategy] = strategy_object
+
+            # Loop the listed strategies
+            for additional_strategy in additional_strategies:
+
+                if isinstance(additional_strategy, BaseStrategy):
+                    self.additional_strategies[additional_strategy.name] = additional_strategy
+
+                else:
+
+                    # Get the strategy from the available strategies
+                    additional_strategy_object = self.available_strategies.get(additional_strategy)
+                    if additional_strategy_object is None:
+                        warnings.warn(
+                            f"Strategy '{additional_strategy}' is not registered with Customs and will be ignored"
+                        )
+                    else:
+                        self.additional_strategies[additional_strategy] = additional_strategy_object
 
             return zone
 

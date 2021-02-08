@@ -57,7 +57,7 @@ class BasicStrategy(BaseStrategy):
         else:
             raise UnauthorizedException()
 
-    def authenticate(self, request: Union[Request, FlaskRequest]) -> Any:
+    def authenticate(self, request: Union[Request, FlaskRequest], **kwargs) -> Any:
         """Method that will extract the basic authorization header from the request,
         and will then call the `validate_credentials` method with a username and password.
         The `validate_credentials` method should be implemented by the user. This method is called

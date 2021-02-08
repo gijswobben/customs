@@ -42,8 +42,7 @@ class BaseStrategy(ABC):
         ...  # pragma: no cover
 
     @abstractmethod
-    def authenticate(self, request: Union[Request, FlaskRequest]) -> Any:
-        """ Method should return the user info """
+    def authenticate(self, request: Union[Request, FlaskRequest], **kwargs) -> Any:
         ...  # pragma: no cover
 
     @abstractmethod

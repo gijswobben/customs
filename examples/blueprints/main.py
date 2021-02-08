@@ -61,8 +61,7 @@ def test():
 
 @secure.route("/user_info")
 def user_info(user: Dict):
-    user.pop("password")
-    return jsonify(user)
+    return jsonify({field: value for field, value in user.items() if field not in ["password"]})
 
 
 if __name__ == "__main__":
